@@ -34,31 +34,41 @@ class ProductRepositoryAdapter implements DatabasePort
             'stock' => $data['stock'],
             'date' => $data['date'],
         ];
-        $this->connection->conectar();
+        $this->connection->connect();
         $sql = "INSERT INTO products (name, reference, price, weight, category, stock, date) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->connection->prepareStatement($sql);
         $stmt->bind_param("ssdssis", $name, $reference, $price, $weight, $category, $stock, $date);
 
-        // Ejecutar la query
-        if ($stmt->execute()) {
-            if ($this->connection->getAffectedRows() > 0) {
+        // execute quer
+        try {
+            if ($stmt->execute()) {
+                if ($this->connection->getAffectedRows() > 0) {
+                    return (array(
+                        'message' => 'Producto agregado correctamente.',
+                        'err' => false,
+                        'code' => 200,
+                        'data' => $nuevoProductoJSON,
+                    ));
+                }
+                $stmt->close();
+            } else {
                 return (array(
-                    'message' => 'Producto actualizado correctamente.',
-                    'err' => false,
-                    'code' => 200,
-                    'data' => $nuevoProductoJSON,
+                    'message' => 'Error al agregar el producto:',
+                    'err' => true,
+                    'code' => 500,
+                    'data' => $this->connection->error,
                 ));
             }
-            $stmt->close();
-        } else {
+        } catch (\Exception $e) {
+            // Handl error when product does not have stock
             return (array(
-                'message' => 'Error al actualiazr el producto:',
+                'message' => 'Error al actualizar el producto:',
                 'err' => true,
                 'code' => 500,
-                'data' => $this->connection->error,
+                'data' => $e->getMessage(),
             ));
         }
-        $this->connection->desconectar();
+        $this->connection->close();
     }
 
     public function setNewProductSold(array $data)
@@ -66,21 +76,25 @@ class ProductRepositoryAdapter implements DatabasePort
         $idproduct = $data['idproduct'];
         $quantity = $data['quantity'];
 
+        $currentDate = new \DateTime('now', new \DateTimeZone('America/Mexico_City'));
+        $currentDateStr = $currentDate->format('Y-m-d');
+
         $nuevoProductoSoldJSON = [
             'idproduct' => $data['idproduct'],
             'quantity' => $data['quantity'],
+            'date' => $currentDateStr,
         ];
-        $this->connection->conectar();
-        $sql = "INSERT INTO sold (idproduct, quantity) VALUES (?, ?)";
+        $this->connection->connect();
+        $sql = "INSERT INTO sold (idproduct, quantity, date) VALUES (?, ?, CURDATE())";
         $stmt = $this->connection->prepareStatement($sql);
         $stmt->bind_param("ii", $idproduct, $quantity);
 
-        // Ejecutar la query
+        // execute query
         try {
             if ($stmt->execute()) {
                 if ($this->connection->getAffectedRows() > 0) {
                     return (array(
-                        'message' => 'Producto actualizado correctamente.',
+                        'message' => 'Producto vendido correctamente.',
                         'err' => false,
                         'code' => 200,
                         'data' => $nuevoProductoSoldJSON,
@@ -96,7 +110,7 @@ class ProductRepositoryAdapter implements DatabasePort
                 ));
             }
         } catch (\Exception $e) {
-            // el prodcuto que se intenta vender ya no cuenta con stock
+            // Handl error when product does not have stock
             return (array(
                 'message' => 'Error al vender el producto:',
                 'err' => true,
@@ -104,11 +118,12 @@ class ProductRepositoryAdapter implements DatabasePort
                 'data' => $e->getMessage(),
             ));
         }
-        $this->connection->desconectar();
+        $this->connection->close();
     }
 
     public function setUpdateProduct(array $data)
     {
+
         $id = $data['id'];
         $name = $data['name'];
         $reference = $data['reference'];
@@ -129,41 +144,70 @@ class ProductRepositoryAdapter implements DatabasePort
             'stock' => $data['stock'],
             'date' => $data['date'],
         ];
-        $this->connection->conectar();
-        $sql = "UPDATE products SET name = ?, reference = ?, price = ?, weight = ?, category = ?, stock = ?, date = ? WHERE idproducts = ?";
-        $stmt = $this->connection->prepareStatement($sql);
-        $stmt->bind_param("ssdssisi", $name, $reference, $price, $weight, $category, $stock, $date, $id);
 
-        // Ejecutar la query
-        if ($stmt->execute()) {
-            if ($this->connection->getAffectedRows() > 0) {
+
+        // Execute la query
+        try {
+            $this->connection->connect();
+
+            $checkIdExistsStmt = $this->connection->prepareStatement("SELECT COUNT(*) as total FROM products WHERE idproducts = ?");
+            $checkIdExistsStmt->bind_param("i", $id);
+            $checkIdExistsStmt->execute();
+            $result = $checkIdExistsStmt->get_result();
+            $existIdIntoDatabase = $result->fetch_assoc();
+
+            if (!$existIdIntoDatabase['total'] > 0) {
                 return (array(
-                    'message' => 'Producto actualizado correctamente.',
-                    'err' => false,
-                    'code' => 200,
+                    'message' => 'Valida nuevamente el Id, parece que el producto no existe!',
+                    'err' => true,
+                    'code' => 400,
                     'data' => $nuevoProductoJSON,
                 ));
             }
-            $stmt->close();
-        } else {
+
+            $sql = "UPDATE products SET name = ?, reference = ?, price = ?, weight = ?, category = ?, stock = ?, date = ? WHERE idproducts = ?";
+            $stmt = $this->connection->prepareStatement($sql);
+            $stmt->bind_param("ssdssisi", $name, $reference, $price, $weight, $category, $stock, $date, $id);
+
+            if ($stmt->execute()) {
+                if ($this->connection->getAffectedRows() > 0 || $this->connection->getAffectedRows() === 0) {
+
+                    return (array(
+                        'message' => 'Producto actualizado correctamente.',
+                        'err' => false,
+                        'code' => 200,
+                        'data' => $nuevoProductoJSON,
+                    ));
+                }
+                $stmt->close();
+            } else {
+                return (array(
+                    'message' => 'Error al actualizar el producto:',
+                    'err' => true,
+                    'code' => 500,
+                    'data' => $this->connection->error,
+                ));
+            }
+        } catch (\Exception $e) {
+            // Handl error when product does not have stock
             return (array(
-                'message' => 'Error al actualiazr el producto:',
+                'message' => 'Error al actualizar el producto:',
                 'err' => true,
                 'code' => 500,
-                'data' => $this->connection->error,
+                'data' => $e->getMessage(),
             ));
         }
-        $this->connection->desconectar();
+        $this->connection->close();
     }
 
     public function delete($id)
     {
-        // Query para eliminar el producto
+        // Query for deleting the product
         $query = "DELETE FROM products WHERE idproducts = $id";
 
-        $this->connection->conectar();
-        // Ejecutar la query
-        if ($this->connection->ejecutar($query) === TRUE) {
+        $this->connection->connect();
+        // execute query
+        if ($this->connection->execute($query) === TRUE) {
             if ($this->connection->getAffectedRows() > 0) {
                 return (array(
                     'message' => 'Producto eliminado correctamente.',
@@ -187,19 +231,19 @@ class ProductRepositoryAdapter implements DatabasePort
                 'data' => $this->connection->error,
             ));
         }
-        $this->connection->desconectar();
+        $this->connection->close();
     }
 
     public function getAll()
     {
         $query = "SELECT * FROM products";
-        $this->connection->conectar();
-        $resultado = $this->connection->ejecutar($query);
-        $this->connection->desconectar();
+        $this->connection->connect();
+        $response = $this->connection->execute($query);
+        $this->connection->close();
 
         $productos_encontrados = array();
-        while ($fila = $resultado->fetch_assoc()) {
-            $productos_encontrados[] = $fila;
+        while ($row = $response->fetch_assoc()) {
+            $productos_encontrados[] = $row;
         }
 
         return $productos_encontrados;
@@ -211,13 +255,13 @@ class ProductRepositoryAdapter implements DatabasePort
         FROM products
         WHERE stock = (SELECT MAX(stock) FROM products)
         LIMIT 1";
-        $this->connection->conectar();
-        $resultado = $this->connection->ejecutar($query);
-        $this->connection->desconectar();
+        $this->connection->connect();
+        $response = $this->connection->execute($query);
+        $this->connection->close();
 
         $productosMaxStock = array();
-        while ($fila = $resultado->fetch_assoc()) {
-            $productosMaxStock[] = $fila;
+        while ($row = $response->fetch_assoc()) {
+            $productosMaxStock[] = $row;
         }
 
         return $productosMaxStock;
@@ -230,23 +274,23 @@ class ProductRepositoryAdapter implements DatabasePort
         GROUP BY idproduct
         ORDER BY total_quantity DESC
         LIMIT 1;";
-        $this->connection->conectar();
-        $resultado = $this->connection->ejecutar($query);
+        $this->connection->connect();
+        $response = $this->connection->execute($query);
 
-        while ($fila = $resultado->fetch_assoc()) {
+        while ($row = $response->fetch_assoc()) {
 
-            $productosMaxSold[] = $fila;
+            $productosMaxSold[] = $row;
 
-            //consultar información adicional desde la tabla productos
+            //aditional query into products table
             $query = "SELECT *
             FROM products
-            WHERE idproducts = " . $fila['idproduct'];
+            WHERE idproducts = " . $row['idproduct'];
 
-            $this->connection->conectar();
-            $resultado = $this->connection->ejecutar($query);
+            $this->connection->connect();
+            $response = $this->connection->execute($query);
 
-            while ($fila = $resultado->fetch_assoc()) {
-                $productosMaxSoldInfo[] = $fila;
+            while ($row = $response->fetch_assoc()) {
+                $productosMaxSoldInfo[] = $row;
             }
         }
         $completeMaxSoldProductInfo = [
@@ -260,7 +304,7 @@ class ProductRepositoryAdapter implements DatabasePort
             'stock' => $productosMaxSoldInfo[0]['stock'],
             'date' => $productosMaxSoldInfo[0]['date'],
         ];
-        $this->connection->desconectar();
+        $this->connection->close();
         return $completeMaxSoldProductInfo;
     }
 }

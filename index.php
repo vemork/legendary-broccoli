@@ -20,19 +20,20 @@ $requestMethod = $_SERVER['REQUEST_METHOD'];
 $requestPath = $_SERVER['REQUEST_URI'];
 $isDefaultResposneActive = true;
 
-// Dependencias de la infraestructura
+// Dependencies Infrastructure
 $domainProduct = new Product();
 
 $connection = new ConexionDB("localhost", "root", "", "konecta");
-// Dependencias de la infraestructura
+// Dependencies Infrastructure
 $productRepository = new ProductRepositoryAdapter($connection);
 
-// Dependencias de la aplicación
+// App Dependencies
 $getProductsUseCase = new GetProductsUseCase($productRepository);
-// Controlador para listar productos
+
+
 $productController = new ProductController($getProductsUseCase);
 
-// Endpoint para listar productos
+// GET all products
 if ($requestMethod === 'GET' && $requestPath === '/productos') {
     $isDefaultResposneActive = false;
     $response = $productController->getProducts();
@@ -40,7 +41,7 @@ if ($requestMethod === 'GET' && $requestPath === '/productos') {
     echo json_encode($response);
 }
 
-// Endpoint para obtener el producto con mayor stock
+// GET the most sold product
 if ($requestMethod === 'GET' && $requestPath === '/max') {
     $isDefaultResposneActive = false;
     $response = $productController->getProductMaxStock();
@@ -48,7 +49,7 @@ if ($requestMethod === 'GET' && $requestPath === '/max') {
     echo json_encode($response);
 }
 
-// Endpoint para obtener el producto con mayor ventas
+// GET the product with more stock
 if ($requestMethod === 'GET' && $requestPath === '/maxsold') {
     $isDefaultResposneActive = false;
     $response = $productController->getProductMaxSold();
@@ -56,14 +57,14 @@ if ($requestMethod === 'GET' && $requestPath === '/maxsold') {
     echo json_encode($response);
 }
 
-// Endpoint para crear productos
+// Add a new product
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/add') {
     $isDefaultResposneActive = false;
 
-    // Obtener los datos del producto desde el cuerpo de la petición
+    // Get JSON BODY data
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Respuesta con éxito
+    // Successful call
     $response = $productController->setProduct($data);
 
     http_response_code($response["code"]);
@@ -73,17 +74,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/add')
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/sold') {
     $isDefaultResposneActive = false;
 
-    // Obtener los datos del producto desde el cuerpo de la petición
+    // Get JSON BODY data
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Respuesta con éxito
+    // Successful call
     $response = $productController->setProductSold($data);
 
     http_response_code($response["code"]);
     echo json_encode($response);
 }
 
-// Verificar si se recibe una solicitud DELETE y si se proporciona el parámetro "id"
+// DELETE product
 if ($_SERVER["REQUEST_METHOD"] === "DELETE" && $_SERVER['REQUEST_URI'] === '/delete') {
     $isDefaultResposneActive = false;
 
@@ -96,14 +97,14 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE" && $_SERVER['REQUEST_URI'] === '/del
     echo json_encode($response);
 }
 
-// Verificar si se recibe una solicitud DELETE y si se proporciona el parámetro "id"
+// PUT product
 if ($_SERVER["REQUEST_METHOD"] === "PUT" && $_SERVER['REQUEST_URI'] === '/update') {
     $isDefaultResposneActive = false;
 
-    // Obtener los datos del producto desde el cuerpo de la petición
+    // Get JSON BODY data
     $data = json_decode(file_get_contents('php://input'), true);
-
-    // Respuesta con éxito
+   
+    // Successful call
     $response = $productController->updateProduct($data);
 
     http_response_code($response["code"]);

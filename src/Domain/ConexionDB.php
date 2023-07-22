@@ -17,7 +17,7 @@ class ConexionDB
         $this->base_datos = $base_datos;
     }
 
-    public function conectar()
+    public function connect()
     {
         $this->conexion = new mysqli($this->host, $this->usuario, $this->contrasena, $this->base_datos);
 
@@ -29,12 +29,12 @@ class ConexionDB
         //echo "Conexión exitosa a la base de datos.";
     }
 
-    public function desconectar()
+    public function close()
     {
         $this->conexion->close();
     }
 
-    public function ejecutar($consulta)
+    public function execute($consulta)
     {
         return $this->conexion->query($consulta);
     }
@@ -48,5 +48,4 @@ class ConexionDB
     {
         return $this->conexion->prepare($sql);
     }
-    // Otros métodos para ejecutar consultas, transacciones, etc.
 }

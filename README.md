@@ -46,15 +46,15 @@ El API cuenta con los siguientes endpoints:
    
 4. http://localhost:9091/delete,     Para eliminar un producto existente
    `Use como payload un JSON BODY igual a este y consuma el endpoint usando DELETE:
-
+``` js
     {
         "id": 1 //id del producto
     }
-    `
+    ```
    
 6. http://localhost:9091/update,     Para actualizar un producto
   `Use como payload un JSON BODY igual a este y consuma el endpoint usando PUT:
-
+``` js
     {
         "id": 15,
         "name": "Producto bebe",
@@ -65,16 +65,16 @@ El API cuenta con los siguientes endpoints:
         "stock": 4,
         "date": "2023-07-04"
     }
-    `
+    ```
    
 8. http://localhost:9091/sold,       Para vender un producto
   `Use como payload un JSON BODY igual a este y consuma el endpoint usando POST:
-  
+  ``` js
   {
       "idproduct": 3,
       "quantity": 1
   }
-  `
+  ```
 
 10. http://localhost:9091/max,        Para conocer el producto con mayor stock
    `Consuma el endpoint usando GET`

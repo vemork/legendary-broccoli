@@ -30,7 +30,8 @@ El API cuenta con los siguientes endpoints:
    `Consuma el endpoint usando GET`
    
 2. http://localhost:9091/add,        Para crear un producto nuevo
-   ``` js Use como payload un JSON BODY igual a este y consuma el endpoint usando POST:
+   Use como payload un JSON BODY igual a este y consuma el endpoint usando POST:
+   ``` js 
 
     {
         "name": "Producto 444",

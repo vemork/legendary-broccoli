@@ -30,7 +30,7 @@ El API cuenta con los siguientes endpoints:
    `Consuma el endpoint usando GET`
    
 2. http://localhost:9091/add,        Para crear un producto nuevo
-   `Use como payload un JSON BODY igual a este y consuma el endpoint usando POST:
+   ``` js Use como payload un JSON BODY igual a este y consuma el endpoint usando POST:
 
     {
         "name": "Producto 444",
@@ -41,7 +41,7 @@ El API cuenta con los siguientes endpoints:
         "stock": 10,
         "date": "2023-07-19"
     }
-    `
+    ```
    
 4. http://localhost:9091/delete,     Para eliminar un producto existente
    `Use como payload un JSON BODY igual a este y consuma el endpoint usando DELETE:
